@@ -22,7 +22,7 @@ A simple Kali Linux MCP protocol that can utilize Nikto, Nmap, Gobuster, Metaspl
 
 Ex:
 
-"Please run a nmap scan on <ipaddr> and write me a report of open ports and possible vulnerabilities"
+"Please run a nmap scan on (ipaddr) and write me a report of open ports and possible vulnerabilities"
 
 ## DISCLAIMER 
   - This is to be used for research purposes only and in no way shape or form should this be used for malicous or unauthorized pentesting.
