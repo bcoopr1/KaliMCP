@@ -1,0 +1,10 @@
+services:
+  pentest-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pentest-mcp
+    restart: unless-stopped
+    # Mount any additional wordlists or directories if needed
+    # volumes:
+    #   - ./wordlists:/opt/wordlists
