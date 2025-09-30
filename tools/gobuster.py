@@ -1,11 +1,10 @@
 import subprocess
 import shlex
 import logging
-from mcp.server.fastmcp import Context
 
 logger = logging.getLogger("pentest-mcp")
 
-def run_gobuster(target: str, ctx: Context, wordlist: str = "/usr/share/wordlists/dirb/common.txt", options: str = "-q") -> str:
+def run_gobuster(target: str, wordlist: str = "/usr/share/wordlists/dirb/common.txt", options: str = "-q") -> str:
     """Run gobuster directory scan on a target.
     
     Args:
@@ -14,8 +13,6 @@ def run_gobuster(target: str, ctx: Context, wordlist: str = "/usr/share/wordlist
         options: Additional gobuster options (default: -q for quiet mode)
     """
     logger.info(f"Running gobuster on {target} with wordlist: {wordlist}")
-    ctx.info(f"Starting gobuster scan on {target} with wordlist: {wordlist}")
-    ctx.report_progress(1, 3)
     
     # Validate input to prevent command injection
     if not validate_input(target) or not validate_options(options) or not validate_wordlist(wordlist):
@@ -25,8 +22,7 @@ def run_gobuster(target: str, ctx: Context, wordlist: str = "/usr/share/wordlist
     try:
         cmd = f"gobuster dir -u {target} -w {wordlist} {options}"
         logger.info(f"Executing command: {cmd}")
-        ctx.info(f"Executing command: {cmd}")
-        ctx.report_progress(2, 3)
+        
         result = subprocess.run(
             shlex.split(cmd),
             capture_output=True,
@@ -39,10 +35,9 @@ def run_gobuster(target: str, ctx: Context, wordlist: str = "/usr/share/wordlist
             logger.error(f"gobuster error: {result.stderr}")
             return f"Error running gobuster: {result.stderr}"
         
-        output = result.stdout if result.stdout else "No results found."
-        ctx.report_progress(3, 3)
-        return output
+        return result.stdout if result.stdout else "No results found."
     except subprocess.TimeoutExpired:
+        logger.warning("Gobuster scan timed out")
         return "Gobuster scan timed out after 5 minutes"
     except Exception as e:
         logger.error(f"Error executing gobuster: {str(e)}")

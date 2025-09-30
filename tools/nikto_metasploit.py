@@ -6,7 +6,6 @@ import os
 import re
 import urllib.parse
 from typing import List, Optional, Dict, Any
-from mcp.server.fastmcp import Context
 
 logger = logging.getLogger("pentest-mcp")
 
@@ -18,7 +17,7 @@ class InputValidationError(Exception):
     """Custom exception for input validation errors"""
     pass
 
-def run_nikto(target: str, ctx: Context, options: Optional[List[str]] = None) -> str:
+def run_nikto(target: str, options: Optional[List[str]] = None) -> str:
     """Run nikto web vulnerability scanner on a target.
     
     Args:
@@ -29,22 +28,18 @@ def run_nikto(target: str, ctx: Context, options: Optional[List[str]] = None) ->
         options = []
     
     logger.info(f"Running nikto scan on {target} with options: {options}")
-    ctx.info(f"Starting nikto scan on {target} with options: {options}")
-    ctx.report_progress(1, 3)
     
     try:
         # Validate and sanitize inputs
         validated_target = validate_and_sanitize_target(target)
         validated_options = validate_nikto_options(options)
         
-        ctx.info(f"Validated target: {validated_target}")
-        ctx.report_progress(2, 3)
+        logger.info(f"Validated target: {validated_target}")
         
         # Construct command with explicit arguments
         cmd_args = ["nikto"] + validated_options + ["-h", validated_target]
         
         logger.info(f"Executing command: {' '.join(cmd_args)}")
-        ctx.info(f"Executing nikto scan")
         
         result = subprocess.run(
             cmd_args,
@@ -55,15 +50,13 @@ def run_nikto(target: str, ctx: Context, options: Optional[List[str]] = None) ->
             env=get_safe_environment()
         )
         
-        ctx.report_progress(3, 3)
-        
         return process_command_output(result, "nikto")
         
     except (InputValidationError, SecurityToolError) as e:
         logger.error(f"Validation/tool error: {str(e)}")
         return f"Error: {str(e)}"
     except subprocess.TimeoutExpired:
-        ctx.info("Nikto scan timed out")
+        logger.warning("Nikto scan timed out")
         return "Nikto scan timed out after 10 minutes"
     except FileNotFoundError:
         return "Nikto not found. Please ensure Nikto is installed and in your PATH."
@@ -71,7 +64,7 @@ def run_nikto(target: str, ctx: Context, options: Optional[List[str]] = None) ->
         logger.error(f"Unexpected error executing nikto: {str(e)}")
         return f"Unexpected error executing nikto: {str(e)}"
 
-def run_msfconsole(commands: List[str], ctx: Context, output_format: str = "text") -> str:
+def run_msfconsole(commands: List[str], output_format: str = "text") -> str:
     """Run Metasploit commands via msfconsole.
     
     Args:
@@ -79,8 +72,6 @@ def run_msfconsole(commands: List[str], ctx: Context, output_format: str = "text
         output_format: Output format - 'text' or 'json' (default: text)
     """
     logger.info(f"Running msfconsole with {len(commands)} commands")
-    ctx.info(f"Starting msfconsole with {len(commands)} commands")
-    ctx.report_progress(1, 4)
     
     rc_file_path = None
     
@@ -95,8 +86,6 @@ def run_msfconsole(commands: List[str], ctx: Context, output_format: str = "text
             rc_file.write("exit\n")  # Ensure msfconsole exits
             rc_file_path = rc_file.name
         
-        ctx.report_progress(2, 4)
-        
         # Construct msfconsole command with explicit arguments
         cmd_args = ["msfconsole", "-q", "-r", rc_file_path]
         
@@ -104,8 +93,6 @@ def run_msfconsole(commands: List[str], ctx: Context, output_format: str = "text
             cmd_args.extend(["-o", "/dev/stdout"])
         
         logger.info(f"Executing msfconsole with resource file: {rc_file_path}")
-        ctx.info(f"Executing msfconsole")
-        ctx.report_progress(3, 4)
         
         result = subprocess.run(
             cmd_args,
@@ -116,15 +103,13 @@ def run_msfconsole(commands: List[str], ctx: Context, output_format: str = "text
             env=get_safe_environment()
         )
         
-        ctx.report_progress(4, 4)
-        
         return process_command_output(result, "msfconsole")
         
     except (InputValidationError, SecurityToolError) as e:
         logger.error(f"Validation/tool error: {str(e)}")
         return f"Error: {str(e)}"
     except subprocess.TimeoutExpired:
-        ctx.info("Msfconsole timed out")
+        logger.warning("Msfconsole timed out")
         return "Msfconsole timed out after 15 minutes"
     except FileNotFoundError:
         return "Msfconsole not found. Please ensure Metasploit Framework is installed and in your PATH."
@@ -139,7 +124,7 @@ def run_msfconsole(commands: List[str], ctx: Context, output_format: str = "text
             except OSError as e:
                 logger.warning(f"Could not delete temporary file {rc_file_path}: {e}")
 
-def search_exploits(search_term: str, ctx: Context, platform: str = "") -> str:
+def search_exploits(search_term: str, platform: str = "") -> str:
     """Search for exploits in Metasploit database.
     
     Args:
@@ -147,8 +132,6 @@ def search_exploits(search_term: str, ctx: Context, platform: str = "") -> str:
         platform: Platform filter (e.g., 'linux', 'windows', 'unix')
     """
     logger.info(f"Searching exploits for: {search_term}")
-    ctx.info(f"Searching Metasploit exploits for: {search_term}")
-    ctx.report_progress(1, 2)
     
     try:
         # Validate inputs
@@ -161,13 +144,12 @@ def search_exploits(search_term: str, ctx: Context, platform: str = "") -> str:
         else:
             search_cmd = f"search {validated_search_term}"
         
-        ctx.report_progress(2, 2)
-        return run_msfconsole([search_cmd], ctx)
+        return run_msfconsole([search_cmd])
         
     except InputValidationError as e:
         return f"Invalid search parameters: {str(e)}"
 
-def quick_exploit_search(cve: str, ctx: Context) -> str:
+def quick_exploit_search(cve: str) -> str:
     """Quick search for exploits by CVE number.
     
     Args:
@@ -175,11 +157,11 @@ def quick_exploit_search(cve: str, ctx: Context) -> str:
     """
     try:
         validated_cve = validate_cve_format(cve)
-        return search_exploits(validated_cve, ctx)
+        return search_exploits(validated_cve)
     except InputValidationError as e:
         return f"Invalid CVE format: {str(e)}"
 
-def get_exploit_info(exploit_path: str, ctx: Context) -> str:
+def get_exploit_info(exploit_path: str) -> str:
     """Get detailed information about a specific exploit.
     
     Args:
@@ -188,7 +170,7 @@ def get_exploit_info(exploit_path: str, ctx: Context) -> str:
     try:
         validated_path = validate_exploit_path(exploit_path)
         commands = [f"use {validated_path}", "info"]
-        return run_msfconsole(commands, ctx)
+        return run_msfconsole(commands)
     except InputValidationError as e:
         return f"Invalid exploit path: {str(e)}"
 

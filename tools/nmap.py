@@ -1,11 +1,10 @@
 import subprocess
 import shlex
 import logging
-from mcp.server.fastmcp import Context
 
 logger = logging.getLogger("pentest-mcp")
 
-def run_nmap(target: str, ctx: Context, options: str = "-sV") -> str:
+def run_nmap(target: str, options: str = "-sV") -> str:
     """Run nmap scan on a target.
     
     Args:
@@ -13,8 +12,6 @@ def run_nmap(target: str, ctx: Context, options: str = "-sV") -> str:
         options: Nmap scan options (default: -sV for service/version detection)
     """
     logger.info(f"Running nmap scan on {target} with options: {options}")
-    ctx.info(f"Starting nmap scan on {target} with options: {options}")
-    ctx.report_progress(1, 3)
     
     # Validate input to prevent command injection
     if not validate_input(target) or not validate_options(options):
@@ -24,8 +21,7 @@ def run_nmap(target: str, ctx: Context, options: str = "-sV") -> str:
     try:
         cmd = f"nmap {options} {target}"
         logger.info(f"Executing command: {cmd}")
-        ctx.info(f"Executing command: {cmd}")
-        ctx.report_progress(2, 3)
+        
         result = subprocess.run(
             shlex.split(cmd),
             capture_output=True,
@@ -40,6 +36,7 @@ def run_nmap(target: str, ctx: Context, options: str = "-sV") -> str:
         
         return result.stdout
     except subprocess.TimeoutExpired:
+        logger.warning("Nmap scan timed out")
         return "Nmap scan timed out after 5 minutes"
     except Exception as e:
         logger.error(f"Error executing nmap: {str(e)}")
