@@ -1,5 +1,5 @@
 # KaliMCP
-A simple Kali Linux MCP protocol that can utilize Nikto, Nmap, Gobuster, Metasploit. This is a POC and a WIP so look for updates or expand on it yourself.
+A simple Kali Linux MCP protocol that can utilize Nikto, Nmap, Gobuster, Metasploit. This is a POC and a WIP so look for updates or expand on it yourself. Only works with Claude Desktop (sorry linux) but it is also functional through claudes API's infrastructure. Learn, build, gorw.
 
 
 ## MAKE SURE TO PASTE YOUR CONTAINERS HASH IN ClAUDE.config file 
@@ -15,10 +15,12 @@ A simple Kali Linux MCP protocol that can utilize Nikto, Nmap, Gobuster, Metaspl
    docker-compose up -d
    ```
 3. Configure Claude Desktop to use this MCP server
+   
+5. Paste hash from Docker image into Claude Config file
 
-4. Restart Claude Desktop
+6. Restart Claude Desktop
 
-5. Send IPs, URLs, ect to Claude with what you want
+7. Send IPs, URLs, ect to Claude with what you want
 
 Ex:
 
