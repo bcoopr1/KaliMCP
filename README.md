@@ -1,3 +1,5 @@
+## BROKEN :( WORKING ON FIX NOW
+
 # KaliMCP
 A simple Kali Linux MCP protocol that can utilize Nikto, Nmap, Gobuster, Metasploit. This is a POC and a WIP so look for updates or expand on it yourself. Only works with Claude Desktop (sorry linux) but it is also functional through claudes API's infrastructure. Learn, build, gorw.
 
